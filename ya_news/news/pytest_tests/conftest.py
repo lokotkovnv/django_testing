@@ -1,9 +1,9 @@
-import pytest
+from datetime import timedelta
 
-from datetime import datetime, timedelta
+import pytest
 from django.conf import settings
-from django.utils import timezone
 from django.urls import reverse
+from django.utils import timezone
 
 from news.models import News, Comment
 from news.forms import BAD_WORDS
@@ -49,7 +49,7 @@ def comment_id_for_args(comment):
 
 @pytest.fixture
 def news_set():
-    today = datetime.today()
+    today = timezone.now().date()
     all_news = [
         News(
             title=f'Новость {index}',

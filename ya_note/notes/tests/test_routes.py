@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 from django.test import TestCase
-from django.urls import reverse
 from django.contrib.auth import get_user_model
 
 from notes.models import Note
@@ -24,28 +23,27 @@ class TestRoutes(TestCase):
 
     def test_pages_availability(self):
         urls = (
-            'notes:home',
-            'users:login',
-            'users:logout',
-            'users:signup',
+            '/',
+            '/auth/login/',
+            '/auth/logout/',
+            '/auth/signup/',
         )
-        for name in urls:
-            with self.subTest(name=name):
-                url = reverse(name)
+
+        for url in urls:
+            with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_pages_availability_for_authenticated_users(self):
         user = self.author
         urls = (
-            'notes:list',
-            'notes:success',
-            'notes:add',
+            '/notes/',
+            '/done/',
+            '/add/',
         )
         self.client.force_login(user)
-        for name in urls:
-            with self.subTest(name=name):
-                url = reverse(name)
+        for url in urls:
+            with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -54,32 +52,35 @@ class TestRoutes(TestCase):
             (self.author, HTTPStatus.OK),
             (self.reader, HTTPStatus.NOT_FOUND),
         )
-        urls = (
-            'notes:detail',
-            'notes:edit',
-            'notes:delete',
+        url_patterns = (
+            '/note/{}/',
+            '/edit/{}/',
+            '/delete/{}/',
         )
         for user, status in user_statuses:
             self.client.force_login(user)
-            for name in urls:
-                with self.subTest(user=user, name=name):
-                    url = reverse(name, args=(self.note.slug,))
+            for pattern in url_patterns:
+                with self.subTest(user=user, pattern=pattern):
+                    url = pattern.format(self.note.slug)
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_redirects(self):
-        login_url = reverse('users:login')
-        urls = (
-            ('notes:detail', (self.note.slug,)),
-            ('notes:edit', (self.note.slug,)),
-            ('notes:delete', (self.note.slug,)),
-            ('notes:add', None),
-            ('notes:success', None),
-            ('notes:list', None),
+        login_url = '/auth/login/'
+        url_patterns = (
+            ('/note/{}/', (self.note.slug,)),
+            ('/edit/{}/', (self.note.slug,)),
+            ('/delete/{}/', (self.note.slug,)),
+            ('/add/', None),
+            ('/done/', None),
+            ('/notes/', None),
         )
-        for name, args in urls:
-            with self.subTest(name=name):
-                url = reverse(name, args=args)
+        for pattern, args in url_patterns:
+            with self.subTest(pattern=pattern):
+                if args:
+                    url = pattern.format(*args)
+                else:
+                    url = pattern
                 redirect_url = f'{login_url}?next={url}'
                 response = self.client.get(url)
                 self.assertRedirects(response, redirect_url)

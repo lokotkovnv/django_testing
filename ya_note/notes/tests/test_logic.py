@@ -29,16 +29,18 @@ class TestNoteCreation(TestCase):
         response = self.author_client.post(
             self.creation_url, data=self.form_data
         )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), 1)
         new_note = Note.objects.get()
-        self.assertIn(new_note.title, self.form_data['title'])
-        self.assertIn(new_note.text, self.form_data['text'])
-        self.assertIn(new_note.slug, self.form_data['slug'])
+        self.assertEqual(new_note.title, self.form_data['title'])
+        self.assertEqual(new_note.text, self.form_data['text'])
+        self.assertEqual(new_note.slug, self.form_data['slug'])
         self.assertEqual(new_note.author, self.author)
 
     def test_anonymous_user_cant_create_note(self):
         response = self.client.post(self.creation_url, data=self.form_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         login_url = reverse('users:login')
         expected_url = f'{login_url}?next={self.creation_url}'
         self.assertRedirects(response, expected_url)
@@ -55,6 +57,7 @@ class TestNoteCreation(TestCase):
         response = self.author_client.post(
             self.creation_url, data=self.form_data
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFormError(
             response, 'form', 'slug', errors=(note.slug + WARNING)
         )
@@ -65,6 +68,7 @@ class TestNoteCreation(TestCase):
         response = self.author_client.post(
             self.creation_url, data=self.form_data
         )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), 1)
         new_note = Note.objects.get()
@@ -98,6 +102,7 @@ class TestNoteEditDelete(TestCase):
 
     def test_author_can_edit_note(self):
         response = self.author_client.post(self.edit_url, self.form_data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse('notes:success'))
         self.note.refresh_from_db()
         self.assertEqual(self.note.title, self.form_data['title'])
@@ -114,6 +119,7 @@ class TestNoteEditDelete(TestCase):
 
     def test_author_can_delete_note(self):
         response = self.author_client.post(self.delete_url)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), 0)
 
